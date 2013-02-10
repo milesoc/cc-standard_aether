@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import com.milesoc.sa.core.Utils._
 import java.util
 import com.milesoc.sa.models.Market
+import com.stackmob.core.MethodVerb
 
 class Markets extends CustomCodeMethod {
 
@@ -32,9 +33,9 @@ class Markets extends CustomCodeMethod {
   override def getParams: JList[String] = List[String]().asJava
 
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
-    request.getMethodName match {
-      case "GET" => getMarkets(request, serviceProvider)
-      case method => errorResponse(400, "Only GET is allowed at the moment, not %s".format(method))
+    request.getVerb match {
+      case MethodVerb.GET => getMarkets(request, serviceProvider)
+      case _ => errorResponse(400, "Only GET is allowed at the moment")
     }
   }
 
