@@ -7,6 +7,7 @@ import java.util.{List => JList}
 import scala.List
 import scala.Some
 import scala.collection.JavaConverters._
+import com.milesoc.sa.core.Reader
 
 /**
  * Created by IntelliJ IDEA.
@@ -20,8 +21,8 @@ class Market(val commodity: String,
   //price history should assume earlier dates come first
   def calculateTrend: Double = {
     var currentDiscount = Market.TREND_DISCOUNT
-    var changesSum = 0
-    var discountsSum = 0
+    var changesSum = 0.0
+    var discountsSum = 0.0
     calculateChanges foreach(change => {
       changesSum += currentDiscount * change
       discountsSum += currentDiscount
@@ -33,7 +34,7 @@ class Market(val commodity: String,
   /**
    * Most recent price changes come first
    */
-  def calculateChanges = calculateChanges(List[Double](), history)
+  def calculateChanges: List[Double] = calculateChanges(List[Double](), history)
 
   private def calculateChanges(changes: List[Double], prices: List[Long]): List[Double] = prices match {
     case (p1 :: (p2 :: tl)) => {
@@ -56,8 +57,8 @@ object Market {
     val marketsRaw = ds.readObjects("markets", List[SMCondition]().asJava).asScala
     val markets = marketsRaw.map (marketRaw => {
       for {
-        name <- convertCommodityName(marketRaw)
-        price <- convertPrice(marketRaw, logger, name)
+        name <- Option(Reader.convertCommodityName(marketRaw))
+        price <- Option(Reader.convertPrice(marketRaw))
         history <- convertPriceHistory(marketRaw, logger, name)
         market <- Some(new Market(name, price, history))
       } yield market
@@ -66,27 +67,13 @@ object Market {
   }
 
   private def convertPriceHistory(marketRaw: SMObject, logger: LoggerService, name: String): Option[List[Long]] = {
-    Option(marketRaw.getValue.get("price_history")).flatMap(_ match {
-      case hist: SMList[_] => hist.getValue match {
+    Reader.convertPriceHistoryToSMList(marketRaw).getValue match {
         case li: JList[_] => Some(li.asScala.map(_ match {
           case p: SMInt => p.getValue.asInstanceOf[Long]
           case _ => logger.error("Price history contains non-integer value"); 0L
         }).toList)
-        case _ => logger.error("Price history is not a list"); None
-      }
       case _ => logger.error("History is not a list for %s".format(name)); None
-    })
-  }
-
-  private def convertCommodityName(marketRaw: SMObject): Option[String] = {
-    Option(marketRaw.getValue.get("commodity")).map(_.getValue.toString)
-  }
-
-  private def convertPrice(marketRaw: SMObject, logger: LoggerService, name: String): Option[Long] = {
-    Option(marketRaw.getValue.get("price")).flatMap(_ match {
-      case p: SMInt => Some(p.getValue)
-      case _ => logger.error("Invalid price found for %s".format(name)); None
-    })
+    }
   }
 
 }
