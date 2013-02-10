@@ -54,7 +54,7 @@ object Market {
 
     val ds = provider.getDataService
     //read all markets from the db
-    val marketsRaw = ds.readObjects("markets", List[SMCondition]().asJava).asScala
+    val marketsRaw = ds.readObjects("market", List[SMCondition]().asJava).asScala
     val markets = marketsRaw.map (marketRaw => {
       for {
         name <- Option(Reader.convertCommodityName(marketRaw))
