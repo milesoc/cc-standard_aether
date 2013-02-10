@@ -59,11 +59,11 @@ object Market {
     val markets = marketsRaw.map (marketRaw => {
       for {
         name <- Option(Reader.convertCommodityName(marketRaw))
-        _ <- logger.debug("found name %s".format(name))
+        _ <- Option(logger.debug("found name %s".format(name)))
         price <- Option(Reader.convertPrice(marketRaw))
-        _ <- logger.debug("found price %s".format(price))
+        _ <- Option(logger.debug("found price %s".format(price)))
         history <- convertPriceHistory(marketRaw, logger, name)
-        _ <- logger.debug("found history %s".format(history))
+        _ <- Option(logger.debug("found history %s".format(history)))
         market <- Some(new Market(name, price, history))
       } yield market
     })
