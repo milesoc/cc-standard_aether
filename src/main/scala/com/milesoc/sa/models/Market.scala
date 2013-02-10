@@ -38,7 +38,9 @@ case class Market(commodity: String,
 
   private def calculateChanges(changes: List[Double], prices: List[Long]): List[Double] = prices match {
     case (p1 :: (p2 :: tl)) => {
-      val change = (p2-p1)/((p1+p2)/2) //economic % change
+      val newPrice = p2.toDouble
+      val oldPrice = p1.toDouble
+      val change = (newPrice-oldPrice)/((oldPrice+newPrice)/2) //economic % change
       calculateChanges(change :: changes, p2 :: tl)
     }
     case _ => changes
