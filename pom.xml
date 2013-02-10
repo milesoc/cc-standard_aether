@@ -65,7 +65,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.stackmob.example.EntryPointExtender</mainClass>
+              <mainClass>com.milesoc.sa.core.EntryPointExtender</mainClass>
             </manifest>
           </archive>
         </configuration>
