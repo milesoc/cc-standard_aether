@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.stackmob.example
+package com.milesoc.sa.core
 
 import com.stackmob.core.customcode.CustomCodeMethod
 import com.stackmob.sdkapi.SDKServiceProvider
