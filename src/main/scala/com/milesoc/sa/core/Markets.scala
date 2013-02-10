@@ -34,7 +34,7 @@ class Markets extends CustomCodeMethod {
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
     request.getMethodName match {
       case "GET" => getMarkets(request, serviceProvider)
-      case _ => errorResponse(400, "Only GET is allowed at the moment")
+      case method => errorResponse(400, "Only GET is allowed at the moment, not %s".format(method))
     }
   }
 
