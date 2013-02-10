@@ -48,6 +48,7 @@ class Markets extends CustomCodeMethod {
       marketMap.put("commodity", market.commodity)
       marketMap.put("price", new java.lang.Long(market.price))
       marketMap.put("trend", new java.lang.Double(market.calculateTrend))
+      resultList.add(marketMap)
     })
 
     resultMap.put("markets", resultList)

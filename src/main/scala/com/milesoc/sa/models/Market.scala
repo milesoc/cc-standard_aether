@@ -14,9 +14,9 @@ import com.milesoc.sa.core.Reader
  * User: miles
  * Date: 2/10/13
  */
-class Market(val commodity: String,
-             val price: Long,
-             val history: List[Long]) {
+case class Market(commodity: String,
+                  price: Long,
+                  history: List[Long]) {
 
   //price history should assume earlier dates come first
   def calculateTrend: Double = {
@@ -67,7 +67,9 @@ object Market {
         market <- Some(new Market(name, price, history))
       } yield market
     })
-    markets.toList.filter(_.isDefined).map(_.get)
+    val result = markets.toList.filter(_.isDefined).map(_.get)
+    logger.debug("Markets: %s".format(result))
+    result
   }
 
   private def convertPriceHistory(marketRaw: SMObject, logger: LoggerService, name: String): Option[List[Long]] = {
