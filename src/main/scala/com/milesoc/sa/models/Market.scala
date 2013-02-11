@@ -21,6 +21,7 @@ case class Market(id: String,
 
   //price history should assume earlier dates come first
   def calculateTrend: Double = {
+    if (calculateChanges.length == 0) return 0.0
     var currentDiscount = Market.TREND_DISCOUNT
     var changesSum = 0.0
     var discountsSum = 0.0
