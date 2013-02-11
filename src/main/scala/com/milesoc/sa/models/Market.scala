@@ -14,7 +14,8 @@ import com.milesoc.sa.core.Reader
  * User: miles
  * Date: 2/10/13
  */
-case class Market(commodity: String,
+case class Market(id: String,
+                  commodity: String,
                   price: Long,
                   history: List[Long]) {
 
@@ -49,7 +50,7 @@ case class Market(commodity: String,
 
 object Market {
 
-  final val TREND_DISCOUNT = 0.5
+  final val TREND_DISCOUNT = 0.8
 
   def getAllMarkets(request: ProcessedAPIRequest, provider: SDKServiceProvider): List[Market] = {
     val logger = provider.getLoggerService(getClass)
@@ -57,21 +58,16 @@ object Market {
     val ds = provider.getDataService
     //read all markets from the db
     val marketsRaw = ds.readObjects("market", List[SMCondition]().asJava).asScala
-    logger.debug("Found %s markets".format(marketsRaw.length))
     val markets = marketsRaw.map (marketRaw => {
       for {
-        name <- Option(Reader.convertCommodityName(marketRaw))
-        _ <- Option(logger.debug("found name %s".format(name)))
+        id <- Option(Reader.getString("market_id", marketRaw))
+        name <- Option(Reader.getString("commodity", marketRaw))
         price <- Option(Reader.convertPrice(marketRaw))
-        _ <- Option(logger.debug("found price %s".format(price)))
         history <- convertPriceHistory(marketRaw, logger, name)
-        _ <- Option(logger.debug("found history %s".format(history)))
-        market <- Some(new Market(name, price, history))
+        market <- Some(new Market(id, name, price, history))
       } yield market
     })
-    val result = markets.toList.filter(_.isDefined).map(_.get)
-    logger.debug("Markets: %s".format(result))
-    result
+    markets.toList.filter(_.isDefined).map(_.get)
   }
 
   private def convertPriceHistory(marketRaw: SMObject, logger: LoggerService, name: String): Option[List[Long]] = {

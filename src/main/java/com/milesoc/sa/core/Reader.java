@@ -12,8 +12,8 @@ import com.stackmob.sdkapi.SMString;
 
 //This is a terrible little class to handle some poor java-scala interactions. Hoping I can find a better way round this.
 public class Reader {
-  public static String convertCommodityName(SMObject marketRaw) {
-    return ((SMString)(marketRaw.getValue().get("commodity"))).getValue();
+  public static String getString(String fieldName, SMObject marketRaw) {
+    return ((SMString)(marketRaw.getValue().get(fieldName))).getValue();
   }
 
   public static Long convertPrice(SMObject marketRaw) {

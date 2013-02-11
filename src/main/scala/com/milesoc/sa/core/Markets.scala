@@ -45,6 +45,7 @@ class Markets extends CustomCodeMethod {
     val resultList = new util.ArrayList[JMap[String, Object]]()
     markets foreach(market => {
       val marketMap = new util.LinkedHashMap[String, Object]()
+      marketMap.put("id", market.id)
       marketMap.put("commodity", market.commodity)
       marketMap.put("price", new java.lang.Long(market.price))
       marketMap.put("trend", new java.lang.Double(market.calculateTrend))
