@@ -22,7 +22,7 @@ import com.stackmob.core.rest.{ResponseToProcess, ProcessedAPIRequest}
 import java.util.{List => JList, Map => JMap}
 import scala.collection.JavaConverters._
 import com.milesoc.sa.core.Utils._
-import java.util
+import java.{lang, util}
 import com.milesoc.sa.models.Market
 import com.stackmob.core.MethodVerb
 
@@ -35,24 +35,38 @@ class Markets extends CustomCodeMethod {
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
     request.getVerb match {
       case MethodVerb.GET => getMarkets(request, serviceProvider)
+      case MethodVerb.PUT => updatePrice(request, serviceProvider)
       case _ => errorResponse(400, "Only GET is allowed at the moment")
     }
   }
 
   def getMarkets(request: ProcessedAPIRequest, provider: SDKServiceProvider): ResponseToProcess = {
-    val markets = Market.getAllMarkets(request, provider)
+    val markets = Market.getAllMarkets(provider)
     val resultMap = new util.HashMap[String, Object]()
     val resultList = new util.ArrayList[JMap[String, Object]]()
     markets foreach(market => {
       val marketMap = new util.LinkedHashMap[String, Object]()
       marketMap.put("id", market.id)
       marketMap.put("commodity", market.commodity)
-      marketMap.put("price", new java.lang.Long(market.price))
-      marketMap.put("trend", new java.lang.Double(market.calculateTrend))
+      marketMap.put("price", new lang.Long(market.price))
+      marketMap.put("trend", new lang.Double(market.calculateTrend))
       resultList.add(marketMap)
     })
 
     resultMap.put("markets", resultList)
+    new ResponseToProcess(200, resultMap)
+  }
+
+  def updatePrice(request: ProcessedAPIRequest, provider: SDKServiceProvider): ResponseToProcess = {
+    val toUpdate = request.getParams.get("id")
+    val newPrice = request.getParams.get("price")
+    val newTrend = Market.updatePrice(toUpdate, newPrice, provider)
+
+    val resultMap = new util.HashMap[String, Object]()
+    resultMap.put("id", toUpdate)
+    resultMap.put("price", newPrice)
+    resultMap.put("trend", new lang.Double(newTrend))
+
     new ResponseToProcess(200, resultMap)
   }
 

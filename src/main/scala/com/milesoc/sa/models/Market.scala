@@ -53,7 +53,26 @@ object Market {
 
   final val TREND_DISCOUNT = 0.8
 
-  def getAllMarkets(request: ProcessedAPIRequest, provider: SDKServiceProvider): List[Market] = {
+  def getMarket(id: String, provider: SDKServiceProvider): Market = {
+    val logger = provider.getLoggerService(getClass)
+
+    val ds = provider.getDataService
+    //read all markets from the db
+    val marketsRaw = ds.readObjects("market", List[SMCondition](new SMEquals("market_id", new SMString(id))).asJava).asScala
+    val markets = marketsRaw.map (marketRaw => {
+      for {
+        id <- Option(Reader.getString("market_id", marketRaw))
+        name <- Option(Reader.getString("commodity", marketRaw))
+        price <- Option(Reader.convertPrice(marketRaw))
+        history <- convertPriceHistory(marketRaw, logger, name)
+        market <- Some(new Market(id, name, price, history))
+      } yield market
+    })
+    markets.toList.filter(_.isDefined).map(_.get).head
+  }
+
+
+  def getAllMarkets(provider: SDKServiceProvider): List[Market] = {
     val logger = provider.getLoggerService(getClass)
 
     val ds = provider.getDataService
@@ -69,6 +88,19 @@ object Market {
       } yield market
     })
     markets.toList.filter(_.isDefined).map(_.get)
+  }
+
+
+  def updatePrice(toUpdate: String, newPrice: String, provider: SDKServiceProvider): Double = {
+    val ds = provider.getDataService
+    val price = newPrice.toLong
+    val update = List[SMUpdate](new SMSet("price", new SMInt(price))).asJava
+    ds.updateObject("market", toUpdate, update)
+
+    ds.addRelatedObjects("market", new SMString(toUpdate), "price_history", List(new SMInt(price)).asJava)
+
+    val newMarket = getMarket(toUpdate, provider)
+    newMarket.calculateTrend
   }
 
   private def convertPriceHistory(marketRaw: SMObject, logger: LoggerService, name: String): Option[List[Long]] = {
