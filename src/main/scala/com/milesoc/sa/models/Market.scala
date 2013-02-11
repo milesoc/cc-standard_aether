@@ -43,7 +43,8 @@ case class Market(id: String,
       val newPrice = p2.toDouble
       val oldPrice = p1.toDouble
       val change = (newPrice-oldPrice)/((oldPrice+newPrice)/2) //economic % change
-      calculateChanges(change :: changes, p2 :: tl)
+      val filtered = if (change == Double.NaN) 0 else change
+      calculateChanges(filtered :: changes, p2 :: tl)
     }
     case _ => changes
   }
