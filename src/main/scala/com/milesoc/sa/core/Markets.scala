@@ -35,7 +35,6 @@ class Markets extends CustomCodeMethod {
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
     request.getVerb match {
       case MethodVerb.GET => getMarkets(request, serviceProvider)
-      case MethodVerb.PUT => updatePrice(request, serviceProvider)
       case _ => errorResponse(400, "Only GET is allowed at the moment")
     }
   }
@@ -57,17 +56,6 @@ class Markets extends CustomCodeMethod {
     new ResponseToProcess(200, resultMap)
   }
 
-  def updatePrice(request: ProcessedAPIRequest, provider: SDKServiceProvider): ResponseToProcess = {
-    val toUpdate = request.getParams.get("id")
-    val newPrice = request.getParams.get("price")
-    val newTrend = Market.updatePrice(toUpdate, newPrice, provider)
 
-    val resultMap = new util.HashMap[String, Object]()
-    resultMap.put("id", toUpdate)
-    resultMap.put("price", newPrice)
-    resultMap.put("trend", new lang.Double(newTrend))
-
-    new ResponseToProcess(200, resultMap)
-  }
 
 }
