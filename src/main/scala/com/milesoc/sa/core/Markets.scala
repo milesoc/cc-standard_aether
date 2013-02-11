@@ -52,7 +52,7 @@ class Markets extends CustomCodeMethod {
       resultList.add(marketMap)
     })
 
-    resultMap.put("markets", resultList)
+    resultMap.put("result", resultList)
     new ResponseToProcess(200, resultMap)
   }
 
