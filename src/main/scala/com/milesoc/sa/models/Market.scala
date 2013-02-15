@@ -54,8 +54,6 @@ object Market {
   final val TREND_DISCOUNT = 0.8
 
   def getMarket(id: String, provider: SDKServiceProvider): Market = {
-    val logger = provider.getLoggerService(getClass)
-
     val ds = provider.getDataService
     //read all markets from the db
     val marketsRaw = ds.readObjects("market", List[SMCondition](new SMEquals("market_id", new SMString(id))).asJava).asScala
@@ -73,16 +71,21 @@ object Market {
 
   def getAllMarkets(provider: SDKServiceProvider): List[Market] = {
     val ds = provider.getDataService
+    val logger = provider.getLoggerService(getClass)
     //read all markets from the db
     val marketsRaw = ds.readObjects("market", List[SMCondition]().asJava).asScala
     val markets = marketsRaw.map (marketRaw => {
-      for {
+      val marketProcessed = (for {
         id <- Option(Reader.getString("market_id", marketRaw))
         name <- Option(Reader.getString("commodity", marketRaw))
-        price <- Price.getPrice(id, provider)
+        _ <- Some(logger.debug("got commodity %s".format(name)))
+        price <- Option(Price.getPrice(id, provider))
         trend <- Some(0)
         market <- Some(new Market(id, name, price))
-      } yield market
+      } yield market)
+      if (marketProcessed.isEmpty)
+        logger.error("Failed to parse market: %s".format(marketRaw.getValue.asScala.toString))
+      marketProcessed
     })
     markets.toList.filter(_.isDefined).map(_.get)
   }

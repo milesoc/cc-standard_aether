@@ -11,7 +11,7 @@ import com.milesoc.sa.core.Reader
  */
 object Price {
 
-  def getPrice(marketId: String, provider: SDKServiceProvider): Option[Long] = {
+  def getPrice(marketId: String, provider: SDKServiceProvider): Long = {
     val ds = provider.getDataService
     val conditions = List[SMCondition](new SMEquals("market", new SMString(marketId))).asJava
     val resultFilters = new ResultFilters(0,
@@ -19,9 +19,9 @@ object Price {
       List[SMOrdering](new SMOrdering("createddate", OrderingDirection.DESCENDING)).asJava,
       List[String]("price").asJava)
     val latestPrice = ds.readObjects("price", conditions, 1, resultFilters)
-    latestPrice.asScala.headOption.map(priceObj => {
-      Reader.convertPrice(priceObj)
-    })
+    (latestPrice.asScala.headOption map(priceObj => {
+      Reader.convertPrice(priceObj).toLong
+    })) getOrElse(-1L)
   }
 
 }
