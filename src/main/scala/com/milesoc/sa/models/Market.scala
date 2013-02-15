@@ -16,38 +16,37 @@ import com.milesoc.sa.core.Reader
  */
 case class Market(id: String,
                   commodity: String,
-                  price: Long,
-                  history: List[Long]) {
+                  price: Long) {
 
-  //price history should assume earlier dates come first
-  def calculateTrend: Double = {
-    if (calculateChanges.length == 0) return 0.0
-    var currentDiscount = Market.TREND_DISCOUNT
-    var changesSum = 0.0
-    var discountsSum = 0.0
-    calculateChanges foreach(change => {
-      changesSum += currentDiscount * change
-      discountsSum += currentDiscount
-      currentDiscount *= Market.TREND_DISCOUNT
-    })
-    changesSum/discountsSum
-  }
-
-  /**
-   * Most recent price changes come first
-   */
-  def calculateChanges: List[Double] = calculateChanges(List[Double](), history)
-
-  private def calculateChanges(changes: List[Double], prices: List[Long]): List[Double] = prices match {
-    case (p1 :: (p2 :: tl)) => {
-      val newPrice = p2.toDouble
-      val oldPrice = p1.toDouble
-      val change = (newPrice-oldPrice)/((oldPrice+newPrice)/2) //economic % change
-      val filtered = if (change.isNaN) 0 else change
-      calculateChanges(filtered :: changes, p2 :: tl)
-    }
-    case _ => changes
-  }
+//  //price history should assume earlier dates come first
+//  def calculateTrend: Double = {
+//    if (calculateChanges.length == 0) return 0.0
+//    var currentDiscount = Market.TREND_DISCOUNT
+//    var changesSum = 0.0
+//    var discountsSum = 0.0
+//    calculateChanges foreach(change => {
+//      changesSum += currentDiscount * change
+//      discountsSum += currentDiscount
+//      currentDiscount *= Market.TREND_DISCOUNT
+//    })
+//    changesSum/discountsSum
+//  }
+//
+//  /**
+//   * Most recent price changes come first
+//   */
+//  def calculateChanges: List[Double] = calculateChanges(List[Double](), history)
+//
+//  private def calculateChanges(changes: List[Double], prices: List[Long]): List[Double] = prices match {
+//    case (p1 :: (p2 :: tl)) => {
+//      val newPrice = p2.toDouble
+//      val oldPrice = p1.toDouble
+//      val change = (newPrice-oldPrice)/((oldPrice+newPrice)/2) //economic % change
+//      val filtered = if (change.isNaN) 0 else change
+//      calculateChanges(filtered :: changes, p2 :: tl)
+//    }
+//    case _ => changes
+//  }
 }
 
 object Market {
@@ -65,8 +64,7 @@ object Market {
         id <- Option(Reader.getString("market_id", marketRaw))
         name <- Option(Reader.getString("commodity", marketRaw))
         price <- Option(Reader.convertPrice(marketRaw))
-        history <- convertPriceHistory(marketRaw, logger, name)
-        market <- Some(new Market(id, name, price, history))
+        market <- Some(new Market(id, name, price))
       } yield market
     })
     markets.toList.filter(_.isDefined).map(_.get).head
@@ -74,8 +72,6 @@ object Market {
 
 
   def getAllMarkets(provider: SDKServiceProvider): List[Market] = {
-    val logger = provider.getLoggerService(getClass)
-
     val ds = provider.getDataService
     //read all markets from the db
     val marketsRaw = ds.readObjects("market", List[SMCondition]().asJava).asScala
@@ -83,35 +79,12 @@ object Market {
       for {
         id <- Option(Reader.getString("market_id", marketRaw))
         name <- Option(Reader.getString("commodity", marketRaw))
-        price <- Option(Reader.convertPrice(marketRaw))
-        history <- convertPriceHistory(marketRaw, logger, name)
-        market <- Some(new Market(id, name, price, history))
+        price <- Price.getPrice(id, provider)
+        trend <- Some(0)
+        market <- Some(new Market(id, name, price))
       } yield market
     })
     markets.toList.filter(_.isDefined).map(_.get)
-  }
-
-
-  def updatePrice(toUpdate: String, newPrice: String, provider: SDKServiceProvider): Double = {
-    val ds = provider.getDataService
-    val price = newPrice.toLong
-    val update = List[SMUpdate](new SMSet("price", new SMInt(price))).asJava
-    ds.updateObject("market", toUpdate, update)
-
-    ds.addRelatedObjects("market", new SMString(toUpdate), "price_history", List(new SMInt(price)).asJava)
-
-    val newMarket = getMarket(toUpdate, provider)
-    newMarket.calculateTrend
-  }
-
-  private def convertPriceHistory(marketRaw: SMObject, logger: LoggerService, name: String): Option[List[Long]] = {
-    Reader.convertPriceHistoryToSMList(marketRaw).getValue match {
-        case li: JList[_] => Some(li.asScala.map(_ match {
-          case p: SMInt => p.getValue.asInstanceOf[Long]
-          case _ => logger.error("Price history contains non-integer value"); 0L
-        }).toList)
-      case _ => logger.error("History is not a list for %s".format(name)); None
-    }
   }
 
 }

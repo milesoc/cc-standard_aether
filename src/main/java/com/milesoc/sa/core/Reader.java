@@ -6,7 +6,6 @@
 package com.milesoc.sa.core;
 
 import com.stackmob.sdkapi.SMInt;
-import com.stackmob.sdkapi.SMList;
 import com.stackmob.sdkapi.SMObject;
 import com.stackmob.sdkapi.SMString;
 
@@ -16,12 +15,8 @@ public class Reader {
     return ((SMString)(marketRaw.getValue().get(fieldName))).getValue();
   }
 
-  public static Long convertPrice(SMObject marketRaw) {
-    return ((SMInt)(marketRaw.getValue().get("price"))).getValue();
-  }
-
-  public static SMList<?> convertPriceHistoryToSMList(SMObject marketRaw) {
-    return ((SMList<?>)(marketRaw.getValue().get("price_history")));
+  public static Long convertPrice(SMObject rawObj) {
+    return ((SMInt)(rawObj.getValue().get("price"))).getValue();
   }
 
 }

@@ -25,6 +25,7 @@ import com.milesoc.sa.core.Utils._
 import java.{lang, util}
 import com.milesoc.sa.models.Market
 import com.stackmob.core.MethodVerb
+import lang.Double
 
 class Markets extends CustomCodeMethod {
 
@@ -33,13 +34,17 @@ class Markets extends CustomCodeMethod {
   override def getParams: JList[String] = List[String]().asJava
 
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
-    request.getVerb match {
-      case MethodVerb.GET => getMarkets(request, serviceProvider)
-      case _ => errorResponse(400, "Only GET is allowed at the moment")
+    request.getLoggedInUser match {
+      case null => errorResponse(401, "Not logged in")
+      case user => request.getVerb match {
+        //for now user won't matter since it shows all markets, etc, but this is a good pattern
+        case MethodVerb.GET => getMarkets(request, serviceProvider, user)
+        case _ => errorResponse(400, "Only GET is allowed at the moment")
+      }
     }
   }
 
-  def getMarkets(request: ProcessedAPIRequest, provider: SDKServiceProvider): ResponseToProcess = {
+  def getMarkets(request: ProcessedAPIRequest, provider: SDKServiceProvider, user: String): ResponseToProcess = {
     val markets = Market.getAllMarkets(provider)
     val resultMap = new util.HashMap[String, Object]()
     val resultList = new util.ArrayList[JMap[String, Object]]()
@@ -48,7 +53,7 @@ class Markets extends CustomCodeMethod {
       marketMap.put("id", market.id)
       marketMap.put("commodity", market.commodity)
       marketMap.put("price", new lang.Long(market.price))
-      marketMap.put("trend", new lang.Double(market.calculateTrend))
+      marketMap.put("trend", new Double(0.0))
       resultList.add(marketMap)
     })
 
