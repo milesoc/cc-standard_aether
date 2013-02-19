@@ -10,13 +10,20 @@ import com.stackmob.sdkapi.SMObject;
 import com.stackmob.sdkapi.SMString;
 
 //This is a terrible little class to handle some poor java-scala interactions. Hoping I can find a better way round this.
+//TODO Obviously lots of null checks and other error handling.
+//This would probably be better used for simply getting the SMString/SMInt/etc out, since that will be null without
+//throwing a nullpointer as readily. I can then Option() that and map it to its real type in scala.
 public class Reader {
-  public static String getString(String fieldName, SMObject marketRaw) {
-    return ((SMString)(marketRaw.getValue().get(fieldName))).getValue();
+  public static String getString(String fieldName, SMObject rawObj) {
+    return ((SMString)(rawObj.getValue().get(fieldName))).getValue();
   }
 
-  public static Long convertPrice(SMObject rawObj) {
-    return ((SMInt)(rawObj.getValue().get("price"))).getValue();
+  public static long getLong(String fieldName, SMObject rawObj) {
+    return ((SMInt)(rawObj.getValue().get(fieldName))).getValue();
+  }
+
+  public static SMObject getSubObject(String fieldName, SMObject rawObj) {
+    return ((SMObject)(rawObj.getValue().get(fieldName)));
   }
 
 }

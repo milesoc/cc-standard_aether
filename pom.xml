@@ -65,7 +65,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.milesoc.sa.core.EntryPointExtender</mainClass>
+              <mainClass>com.milesoc.sa.methods.EntryPointExtender</mainClass>
             </manifest>
           </archive>
         </configuration>

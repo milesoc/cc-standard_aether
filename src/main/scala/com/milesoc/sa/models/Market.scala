@@ -8,6 +8,7 @@ import scala.List
 import scala.Some
 import scala.collection.JavaConverters._
 import com.milesoc.sa.core.Reader
+import java.util
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,37 +17,12 @@ import com.milesoc.sa.core.Reader
  */
 case class Market(id: String,
                   commodity: String,
-                  price: Long) {
+                  price: Long,
+                  trend: Double,
+                  qty: Long) {
 
-//  //price history should assume earlier dates come first
-//  def calculateTrend: Double = {
-//    if (calculateChanges.length == 0) return 0.0
-//    var currentDiscount = Market.TREND_DISCOUNT
-//    var changesSum = 0.0
-//    var discountsSum = 0.0
-//    calculateChanges foreach(change => {
-//      changesSum += currentDiscount * change
-//      discountsSum += currentDiscount
-//      currentDiscount *= Market.TREND_DISCOUNT
-//    })
-//    changesSum/discountsSum
-//  }
-//
-//  /**
-//   * Most recent price changes come first
-//   */
-//  def calculateChanges: List[Double] = calculateChanges(List[Double](), history)
-//
-//  private def calculateChanges(changes: List[Double], prices: List[Long]): List[Double] = prices match {
-//    case (p1 :: (p2 :: tl)) => {
-//      val newPrice = p2.toDouble
-//      val oldPrice = p1.toDouble
-//      val change = (newPrice-oldPrice)/((oldPrice+newPrice)/2) //economic % change
-//      val filtered = if (change.isNaN) 0 else change
-//      calculateChanges(filtered :: changes, p2 :: tl)
-//    }
-//    case _ => changes
-//  }
+  def investment = price * qty
+
 }
 
 object Market {
@@ -55,39 +31,56 @@ object Market {
 
   def getMarket(id: String, provider: SDKServiceProvider): Market = {
     val ds = provider.getDataService
+    val conditions = List[SMCondition](new SMEquals("market_id", new SMString(id))).asJava
     //read all markets from the db
-    val marketsRaw = ds.readObjects("market", List[SMCondition](new SMEquals("market_id", new SMString(id))).asJava).asScala
+    val marketsRaw = ds.readObjects("market", conditions).asScala
     val markets = marketsRaw.map (marketRaw => {
-      for {
-        id <- Option(Reader.getString("market_id", marketRaw))
-        name <- Option(Reader.getString("commodity", marketRaw))
-        price <- Option(Reader.convertPrice(marketRaw))
-        market <- Some(new Market(id, name, price))
-      } yield market
+      parseMarket(marketRaw, provider)
     })
     markets.toList.filter(_.isDefined).map(_.get).head
   }
-
 
   def getAllMarkets(provider: SDKServiceProvider): List[Market] = {
     val ds = provider.getDataService
     val logger = provider.getLoggerService(getClass)
     //read all markets from the db
-    val marketsRaw = ds.readObjects("market", List[SMCondition]().asJava).asScala
+    val filters = new ResultFilters(0,
+      -1,
+      List[SMOrdering](new SMOrdering("commodity", OrderingDirection.ASCENDING)).asJava,
+      List("market_id", "commodity").asJava)
+
+    val marketsRaw = ds.readObjects("market", List[SMCondition]().asJava, 1, filters).asScala
     val markets = marketsRaw.map (marketRaw => {
-      val marketProcessed = (for {
-        id <- Option(Reader.getString("market_id", marketRaw))
-        name <- Option(Reader.getString("commodity", marketRaw))
-        _ <- Some(logger.debug("got commodity %s".format(name)))
-        price <- Option(Price.getPrice(id, provider))
-        trend <- Some(0)
-        market <- Some(new Market(id, name, price))
-      } yield market)
-      if (marketProcessed.isEmpty)
-        logger.error("Failed to parse market: %s".format(marketRaw.getValue.asScala.toString))
-      marketProcessed
+      parseMarket(marketRaw, provider)
     })
     markets.toList.filter(_.isDefined).map(_.get)
+  }
+
+
+  def parseMarket(marketRaw: SMObject, provider: SDKServiceProvider): Option[Market] = {
+    val logger: LoggerService = provider.getLoggerService(getClass)
+    val marketProcessed = (for {
+      id <- Option(Reader.getString("market_id", marketRaw))
+      name <- Option(Reader.getString("commodity", marketRaw))
+      _ <- Some(logger.debug("got commodity %s".format(name)))
+      price <- Option(Price.getPrice(id, provider))
+      trend <- Some(0)
+      quantity <- Option(getQuantity(id, provider))
+      market <- Some(Market(id, name, price, trend, quantity))
+    } yield market)
+    if (marketProcessed.isEmpty)
+      logger.error("Failed to parse market: %s".format(marketRaw.getValue.asScala.toString))
+    marketProcessed
+  }
+
+  def getQuantity(id: String, provider: SDKServiceProvider): Long = {
+    val ds = provider.getDataService
+    //get all involvements in this market
+    val marketQuantities = ds.readObjects("active_market", List[SMCondition](new SMEquals("market", new SMString(id))).asJava)
+    val allQuantities = marketQuantities.asScala.map(Reader.getLong("quantity", _)).toList
+    allQuantities.foldLeft(0L){(a, b) => {
+      a + b
+    }}
   }
 
 }

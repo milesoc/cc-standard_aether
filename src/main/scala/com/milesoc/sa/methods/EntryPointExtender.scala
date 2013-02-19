@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.milesoc.sa.core
+package com.milesoc.sa.methods
 
 import com.stackmob.core.jar.JarEntryObject
 import com.stackmob.core.customcode.CustomCodeMethod

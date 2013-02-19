@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.milesoc.sa.core
+package com.milesoc.sa.methods
 
 import com.stackmob.core.customcode.CustomCodeMethod
 import com.stackmob.sdkapi._
@@ -54,6 +54,8 @@ class Markets extends CustomCodeMethod {
       marketMap.put("commodity", market.commodity)
       marketMap.put("price", new lang.Long(market.price))
       marketMap.put("trend", new Double(0.0))
+      marketMap.put("quantity", new lang.Long(market.qty))
+      marketMap.put("investment", new lang.Long(market.investment))
       resultList.add(marketMap)
     })
 

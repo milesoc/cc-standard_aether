@@ -20,7 +20,7 @@ object Price {
       List[String]("price").asJava)
     val latestPrice = ds.readObjects("price", conditions, 1, resultFilters)
     (latestPrice.asScala.headOption map(priceObj => {
-      Reader.convertPrice(priceObj).toLong
+      Reader.getLong("price", priceObj)
     })) getOrElse(-1L)
   }
 
