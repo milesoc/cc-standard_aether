@@ -23,12 +23,20 @@ class Characters extends CustomCodeMethod {
   override def getParams: JList[String] = List[String]().asJava
 
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
-    request.getLoggedInUser match {
-      case null => errorResponse(401, "Not logged in")
-      case user => request.getVerb match {
-        //for now user won't matter but in the future we can get only the user's characters
-        case MethodVerb.GET => getCharacters(request, serviceProvider, user)
-        case _ => errorResponse(400, "Only GET is allowed at the moment")
+    try {
+      request.getLoggedInUser match {
+        case null => errorResponse(401, "Not logged in")
+        case user => request.getVerb match {
+          //for now user won't matter but in the future we can get only the user's characters
+          case MethodVerb.GET => getCharacters(request, serviceProvider, user)
+          case _ => errorResponse(400, "Only GET is allowed at the moment")
+        }
+      }
+    } catch {
+      case t => {
+        val logger = serviceProvider.getLoggerService(getClass)
+        logger.error("Failed to execute characters", t)
+        errorResponse(500, "internal error")
       }
     }
   }
