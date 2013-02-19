@@ -7,9 +7,8 @@ import java.util.{List => JList, Map => JMap}
 import scala.collection.JavaConverters._
 import com.milesoc.sa.core.Utils._
 import java.{lang, util}
-import com.milesoc.sa.models.{PlayerCharacter, Market}
+import com.milesoc.sa.models.PlayerCharacter
 import com.stackmob.core.MethodVerb
-import lang.Double
 
 /**
  * Created by IntelliJ IDEA.

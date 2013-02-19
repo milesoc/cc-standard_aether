@@ -1,14 +1,8 @@
 package com.milesoc.sa.models
 
-import com.stackmob.core.rest.{ResponseToProcess, ProcessedAPIRequest}
 import com.stackmob.sdkapi._
-import scala.Some
-import java.util.{List => JList}
-import scala.List
-import scala.Some
 import scala.collection.JavaConverters._
 import com.milesoc.sa.core.Reader
-import java.util
 
 /**
  * Created by IntelliJ IDEA.
@@ -69,7 +63,7 @@ object Market {
       market <- Some(Market(id, name, price, trend, quantity))
     } yield market)
     if (marketProcessed.isEmpty)
-      logger.error("Failed to parse market: %s".format(marketRaw.getValue.asScala.toString))
+      logger.error("Failed to parse market: %s".format(Option(Reader.getString("commodity", marketRaw))))
     marketProcessed
   }
 
