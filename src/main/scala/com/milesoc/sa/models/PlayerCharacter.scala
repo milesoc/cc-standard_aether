@@ -12,11 +12,11 @@ import scala.collection.JavaConverters._
 case class PlayerCharacter(id: String,
                      name: String,
                      money: Long,
-                     markets: Map[Market, Long]) {
+                     markets: Map[Market, (String, Long)]) {
 
   def invested: Long = markets.foldLeft(0L){(inv, entry) => {
     val (market, quantity) = entry
-    inv + (market.price*quantity)
+    inv + (market.price*quantity._2)
   }}
 
 }
@@ -66,14 +66,14 @@ object PlayerCharacter {
     characterProcessed
   }
 
-  def getMarketsForChar(id: String, provider: SDKServiceProvider): Map[Market, Long] = {
+  def getMarketsForChar(id: String, provider: SDKServiceProvider): Map[Market, (String, Long)] = {
     //get all active_market entries with this char's name
     val ds = provider.getDataService
     val activeRaw = ds.readObjects("active_market", List[SMCondition](new SMEquals("character", new SMString(id))).asJava, 2)
     val actives = activeRaw.asScala.map (activeMarket => {
       for {
         market <- Market.parseMarket(Reader.getSubObject("market", activeMarket), provider)
-        quantity <- Option(Reader.getLong("quantity", activeMarket))
+        quantity <- Option((Reader.getString("active_market_id", activeMarket), Reader.getLong("quantity", activeMarket)))
       } yield (market, quantity)
     })
     actives.toList.filter(_.isDefined).map(_.get).toMap

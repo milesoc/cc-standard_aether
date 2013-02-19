@@ -1,12 +1,13 @@
 package com.milesoc.sa.methods
 
+
 import com.stackmob.core.customcode.CustomCodeMethod
 import com.stackmob.sdkapi._
 import com.stackmob.core.rest.{ResponseToProcess, ProcessedAPIRequest}
-import java.util.{List => JList, Map => JMap}
+import java.{lang, util}
+import util.{List => JList, Map => JMap}
 import scala.collection.JavaConverters._
 import com.milesoc.sa.core.Utils._
-import java.{lang, util}
 import com.milesoc.sa.models.PlayerCharacter
 import com.stackmob.core.MethodVerb
 
@@ -15,10 +16,9 @@ import com.stackmob.core.MethodVerb
  * User: miles
  * Date: 2/18/13
  */
+class CharacterMarkets extends CustomCodeMethod {
 
-class Characters extends CustomCodeMethod {
-
-  override def getMethodName: String = "characters"
+  override def getMethodName: String = "character_markets"
 
   override def getParams: JList[String] = List[String]().asJava
 
@@ -35,27 +35,31 @@ class Characters extends CustomCodeMethod {
     } catch {
       case t => {
         val logger = serviceProvider.getLoggerService(getClass)
-        logger.error("Failed to execute characters", t)
+        logger.error("Failed to execute character_markets", t)
         errorResponse(500, "internal error")
       }
     }
   }
 
   def getCharacters(request: ProcessedAPIRequest, provider: SDKServiceProvider, user: String): ResponseToProcess = {
-    val characters = PlayerCharacter.getAllCharacters(provider)
+    val id = request.getParams.get("id")
+
+    val character = PlayerCharacter.getCharacter(id, provider)
     val resultMap = new util.HashMap[String, Object]()
     val resultList = new util.ArrayList[JMap[String, Object]]()
-    characters foreach(pc => {
-      val characterMap = new util.LinkedHashMap[String, Object]()
-      characterMap.put("id", pc.id)
-      characterMap.put("name", pc.name)
-      characterMap.put("money", new lang.Long(pc.money))
-      characterMap.put("invested", new lang.Long(pc.invested))
-      resultList.add(characterMap)
+    character.markets foreach(entry => {
+      val marketMap = new util.LinkedHashMap[String, Object]()
+      marketMap.put("id", entry._2._1)
+      marketMap.put("market", entry._1.commodity)
+      marketMap.put("quantity", new lang.Long(entry._2._2))
+      marketMap.put("invested", new lang.Long(entry._2._2*entry._1.price))
+      resultList.add(marketMap)
     })
 
     resultMap.put("result", resultList)
     new ResponseToProcess(200, resultMap)
   }
+
+
 
 }
