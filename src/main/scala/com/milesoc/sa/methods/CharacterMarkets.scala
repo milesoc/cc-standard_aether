@@ -20,7 +20,7 @@ class CharacterMarkets extends CustomCodeMethod {
 
   override def getMethodName: String = "character_markets"
 
-  override def getParams: JList[String] = List[String]().asJava
+  override def getParams: JList[String] = List[String]("id").asJava
 
   override def execute(request: ProcessedAPIRequest, serviceProvider: SDKServiceProvider): ResponseToProcess = {
     try {
