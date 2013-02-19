@@ -62,7 +62,7 @@ object PlayerCharacter {
       character <- Some(new PlayerCharacter(id, name, money, markets))
     } yield character)
     if (characterProcessed.isEmpty)
-      logger.error("Failed to parse character: %s".format(Option(Reader.getString("character_id", characterRaw))
+      logger.error("Failed to parse character: %s".format(Option(Reader.getString("character_id", characterRaw))))
     characterProcessed
   }
 
