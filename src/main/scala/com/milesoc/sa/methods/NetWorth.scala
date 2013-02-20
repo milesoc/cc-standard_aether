@@ -44,11 +44,12 @@ class NetWorth extends CustomCodeMethod {
   def getCharacters(request: ProcessedAPIRequest, provider: SDKServiceProvider, user: String): ResponseToProcess = {
     val characters = PlayerCharacter.getAllCharacters(provider)
     val resultMap = new util.HashMap[String, Object]()
-    val worth = characters.foldLeft(0L){(worth, pc) => {
-      worth + pc.money + pc.invested
+    val (worth, money) = characters.foldLeft((0L, 0L)){(worth, pc) => {
+      ((worth._1 + pc.money + pc.invested), (worth._2 + pc.money))
     }}
 
     resultMap.put("worth", new Long(worth))
+    resultMap.put("money", new Long(money))
     new ResponseToProcess(200, resultMap)
   }
 

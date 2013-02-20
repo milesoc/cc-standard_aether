@@ -3,6 +3,7 @@ package com.milesoc.sa.models
 import com.stackmob.sdkapi._
 import com.milesoc.sa.core.Reader
 import scala.collection.JavaConverters._
+import annotation.tailrec
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,6 +67,28 @@ object PlayerCharacter {
     characterProcessed
   }
 
+  @tailrec
+  def checkDuplicates(actives: List[(Market, (String, Long))],
+                      intermediate: Map[Market, (String, Long)],
+                      provider: SDKServiceProvider): Map[Market, (String, Long)] = actives match {
+    case next :: tl => {
+      val (mkt, (id, qty)) = next
+      val newIntermediate = if (intermediate.contains(mkt)) {
+        val (conflictId, conflictQty) = intermediate(mkt)
+        val (idToDelete, newValue) = if (qty > conflictQty)
+          (conflictId, (id, qty))
+        else
+          (id, (conflictId, conflictQty))
+        provider.getDataService.deleteObject("active_market", idToDelete)
+        (intermediate - mkt) + (mkt -> newValue)
+      } else {
+        intermediate + (next)
+      }
+      checkDuplicates(tl, newIntermediate, provider)
+    }
+    case Nil => intermediate
+  }
+
   def getMarketsForChar(id: String, provider: SDKServiceProvider): Map[Market, (String, Long)] = {
     //get all active_market entries with this char's name
     val ds = provider.getDataService
@@ -76,7 +99,8 @@ object PlayerCharacter {
         quantity <- Option((Reader.getString("active_market_id", activeMarket), Reader.getLong("quantity", activeMarket)))
       } yield (market, quantity)
     })
-    actives.toList.filter(_.isDefined).map(_.get).toMap
+    val validActives: List[(Market, (String, Long))] = actives.toList.filter(_.isDefined).map(_.get)
+    checkDuplicates(validActives, Map(), provider)
   }
 
 }
